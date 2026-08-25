@@ -1,0 +1,377 @@
+{
+  "info": {
+    "_postman_id": "c6c48fb9-8578-4bb8-9f29-d8e599581087",
+    "name": "MecâniQA OAT 1",
+    "description": "Collection das dez rotas REST que cobrem as oito User Stories de peças e serviços.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "pecaCodigo",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "servicoCodigo",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Peças",
+      "description": "Execute as requisições na ordem para reutilizar o código gerado no cadastro.",
+      "item": [
+        {
+          "name": "1. Cadastrar peça",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const resposta = pm.response.json();",
+                  "pm.collectionVariables.set('pecaCodigo', resposta.codigo);",
+                  "pm.test('Código e datas foram gerados', function () {",
+                  "    pm.expect(resposta.codigo).to.be.a('number');",
+                  "    pm.expect(resposta.dataCadastro).to.exist;",
+                  "    pm.expect(resposta.dataUltimaAtualizacao).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoBarras\": \"7891234567890\",\n  \"fornecedorMarca\": \"Bosch\",\n  \"quantidadeEstoque\": 12,\n  \"precoCusto\": 80.50,\n  \"precoVenda\": 125.90,\n  \"tamanho\": \"M\",\n  \"cor\": \"Preta\",\n  \"categoria\": \"FREIOS\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pecas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pecas"]
+            },
+            "description": "US01 - Cadastro de nova peça."
+          }
+        },
+        {
+          "name": "2. Listar peças",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Resposta é uma lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pecas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pecas"]
+            },
+            "description": "US02 - Lista o catálogo de peças."
+          }
+        },
+        {
+          "name": "3. Buscar peça por código",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Código corresponde ao cadastrado', function () {",
+                  "    pm.expect(String(pm.response.json().codigo)).to.eql(pm.collectionVariables.get('pecaCodigo'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pecas/{{pecaCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pecas", "{{pecaCodigo}}"]
+            },
+            "description": "US02 - Consulta uma peça pelo código único."
+          }
+        },
+        {
+          "name": "4. Atualizar peça",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Estoque e preços foram atualizados', function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.quantidadeEstoque).to.eql(20);",
+                  "    pm.expect(resposta.precoVenda).to.eql(140.00);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantidadeEstoque\": 20,\n  \"precoCusto\": 90.00,\n  \"precoVenda\": 140.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pecas/{{pecaCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pecas", "{{pecaCodigo}}"]
+            },
+            "description": "US03 - Atualiza quantidade e preços da peça."
+          }
+        },
+        {
+          "name": "5. Excluir peça",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test('Resposta sem corpo', function () {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pecas/{{pecaCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pecas", "{{pecaCodigo}}"]
+            },
+            "description": "US04 - Exclui uma peça obsoleta."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Serviços",
+      "description": "Execute as requisições na ordem para reutilizar o código gerado no cadastro.",
+      "item": [
+        {
+          "name": "1. Cadastrar serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const resposta = pm.response.json();",
+                  "pm.collectionVariables.set('servicoCodigo', resposta.codigo);",
+                  "pm.test('Código e datas foram gerados', function () {",
+                  "    pm.expect(resposta.codigo).to.be.a('number');",
+                  "    pm.expect(resposta.dataCriacao).to.exist;",
+                  "    pm.expect(resposta.dataUltimaAtualizacao).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Alinhamento\",\n  \"duracaoEstimadaMinutos\": 45,\n  \"custoTabelado\": 100.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/servicos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "servicos"]
+            },
+            "description": "US05 - Cadastro de novo serviço."
+          }
+        },
+        {
+          "name": "2. Listar serviços",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Resposta é uma lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/servicos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "servicos"]
+            },
+            "description": "US06 - Lista o catálogo de serviços."
+          }
+        },
+        {
+          "name": "3. Buscar serviço por código",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Código corresponde ao cadastrado', function () {",
+                  "    pm.expect(String(pm.response.json().codigo)).to.eql(pm.collectionVariables.get('servicoCodigo'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/servicos/{{servicoCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "servicos", "{{servicoCodigo}}"]
+            },
+            "description": "Consulta um serviço pelo código único."
+          }
+        },
+        {
+          "name": "4. Atualizar serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Duração e custo foram atualizados', function () {",
+                  "    const resposta = pm.response.json();",
+                  "    pm.expect(resposta.duracaoEstimadaMinutos).to.eql(60);",
+                  "    pm.expect(resposta.custoTabelado).to.eql(130.00);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duracaoEstimadaMinutos\": 60,\n  \"custoTabelado\": 130.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/servicos/{{servicoCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "servicos", "{{servicoCodigo}}"]
+            },
+            "description": "US07 - Atualiza duração e custo tabelado."
+          }
+        },
+        {
+          "name": "5. Excluir serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test('Resposta sem corpo', function () {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/servicos/{{servicoCodigo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "servicos", "{{servicoCodigo}}"]
+            },
+            "description": "US08 - Exclui um serviço que não é mais prestado."
+          }
+        }
+      ]
+    }
+  ]
+}
