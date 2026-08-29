@@ -16,86 +16,86 @@ classDiagram
     }
 
     class Peca {
-        -Long codigo
-        -String codigoBarras
-        -String fornecedorMarca
-        -Integer quantidadeEstoque
-        -BigDecimal precoCusto
-        -BigDecimal precoVenda
-        -LocalDateTime dataCadastro
-        -LocalDateTime dataUltimaAtualizacao
-        -String tamanho
-        -String cor
-        -CategoriaPeca categoria
-        +getCodigo() Long
-        +setCodigo(Long codigo) void
-        +getQuantidadeEstoque() Integer
-        +setQuantidadeEstoque(Integer quantidade) void
-        +getPrecoCusto() BigDecimal
-        +setPrecoCusto(BigDecimal preco) void
-        +getPrecoVenda() BigDecimal
-        +setPrecoVenda(BigDecimal preco) void
+        -codigo: Long
+        -codigoBarras: String
+        -fornecedorMarca: String
+        -quantidadeEstoque: Integer
+        -precoCusto: BigDecimal
+        -precoVenda: BigDecimal
+        -dataCadastro: LocalDateTime
+        -dataUltimaAtualizacao: LocalDateTime
+        -tamanho: String
+        -cor: String
+        -categoria: CategoriaPeca
+        +getCodigo(): Long
+        +setCodigo(codigo: Long): void
+        +getQuantidadeEstoque(): Integer
+        +setQuantidadeEstoque(quantidade: Integer): void
+        +getPrecoCusto(): BigDecimal
+        +setPrecoCusto(preco: BigDecimal): void
+        +getPrecoVenda(): BigDecimal
+        +setPrecoVenda(preco: BigDecimal): void
     }
 
     class Servico {
-        -Long codigo
-        -String nome
-        -Integer duracaoEstimadaMinutos
-        -BigDecimal custoTabelado
-        -LocalDateTime dataCriacao
-        -LocalDateTime dataUltimaAtualizacao
-        +getCodigo() Long
-        +setCodigo(Long codigo) void
-        +getDuracaoEstimadaMinutos() Integer
-        +setDuracaoEstimadaMinutos(Integer minutos) void
-        +getCustoTabelado() BigDecimal
-        +setCustoTabelado(BigDecimal custo) void
+        -codigo: Long
+        -nome: String
+        -duracaoEstimadaMinutos: Integer
+        -custoTabelado: BigDecimal
+        -dataCriacao: LocalDateTime
+        -dataUltimaAtualizacao: LocalDateTime
+        +getCodigo(): Long
+        +setCodigo(codigo: Long): void
+        +getDuracaoEstimadaMinutos(): Integer
+        +setDuracaoEstimadaMinutos(minutos: Integer): void
+        +getCustoTabelado(): BigDecimal
+        +setCustoTabelado(custo: BigDecimal): void
     }
 
     class PecaRepository {
         <<Singleton>>
-        -PecaRepository INSTANCE
-        -List~Peca~ pecas
-        -AtomicLong proximoCodigo
+        -INSTANCE: PecaRepository
+        -pecas: List~Peca~
+        -proximoCodigo: AtomicLong
         -PecaRepository()
-        +getInstance() PecaRepository
-        +salvar(Peca peca) Peca
-        +listarTodos() List~Peca~
-        +buscarPorCodigo(Long codigo) Optional~Peca~
-        +atualizar(Long codigo, Integer quantidade, BigDecimal custo, BigDecimal venda) Optional~Peca~
-        +excluir(Long codigo) boolean
+        +getInstance(): PecaRepository
+        +salvar(peca: Peca): Peca
+        +listarTodos(): List~Peca~
+        +buscarPorCodigo(codigo: Long): Optional~Peca~
+        +atualizar(codigo: Long, quantidade: Integer, custo: BigDecimal, venda: BigDecimal): Optional~Peca~
+        +excluir(codigo: Long): boolean
     }
 
     class ServicoRepository {
         <<Singleton>>
-        -ServicoRepository INSTANCE
-        -List~Servico~ servicos
-        -AtomicLong proximoCodigo
+        -INSTANCE: ServicoRepository
+        -servicos: List~Servico~
+        -proximoCodigo: AtomicLong
         -ServicoRepository()
-        +getInstance() ServicoRepository
-        +salvar(Servico servico) Servico
-        +listarTodos() List~Servico~
-        +buscarPorCodigo(Long codigo) Optional~Servico~
-        +atualizar(Long codigo, Integer duracao, BigDecimal custo) Optional~Servico~
-        +excluir(Long codigo) boolean
+        +getInstance(): ServicoRepository
+        +salvar(servico: Servico): Servico
+        +listarTodos(): List~Servico~
+        +buscarPorCodigo(codigo: Long): Optional~Servico~
+        +atualizar(codigo: Long, duracao: Integer, custo: BigDecimal): Optional~Servico~
+        +excluir(codigo: Long): boolean
     }
 
     class PecaController {
-        -PecaRepository repository
-        +criar(CriarPecaRequest request) ResponseEntity~Peca~
-        +listar() ResponseEntity~List~Peca~~
-        +buscar(Long codigo) ResponseEntity~Peca~
-        +atualizar(Long codigo, AtualizarPecaRequest request) ResponseEntity~Peca~
-        +excluir(Long codigo) ResponseEntity~Void~
+        -repository: PecaRepository
+        +criar(request: CriarPecaRequest): ResponseEntity~Peca~
+        +listar(): ResponseEntity~List~Peca~~
+        +buscar(codigo: Long): ResponseEntity~Peca~
+        +atualizar(codigo: Long, request: AtualizarPecaRequest): ResponseEntity~Peca~
+        +excluir(codigo: Long): ResponseEntity~Void~
     }
 
     class ServicoController {
-        -ServicoRepository repository
-        +criar(CriarServicoRequest request) ResponseEntity~Servico~
-        +listar() ResponseEntity~List~Servico~~
-        +buscar(Long codigo) ResponseEntity~Servico~
-        +atualizar(Long codigo, AtualizarServicoRequest request) ResponseEntity~Servico~
-        +excluir(Long codigo) ResponseEntity~Void~
+        -repository: ServicoRepository
+        +criar(request: CriarServicoRequest): ResponseEntity~Servico~
+        +listar(): ResponseEntity~List~Servico~~
+        +buscar(codigo: Long): ResponseEntity~Servico~
+        +atualizar(codigo: Long, request: AtualizarServicoRequest): ResponseEntity~Servico~
+        +excluir(codigo: Long): ResponseEntity~Void~
     }
 
     Peca --> CategoriaPeca : categoria obrigatória
@@ -115,52 +115,52 @@ classDiagram
     direction LR
 
     class CriarPecaRequest {
-        -String codigoBarras
-        -String fornecedorMarca
-        -Integer quantidadeEstoque
-        -BigDecimal precoCusto
-        -BigDecimal precoVenda
-        -String tamanho
-        -String cor
-        -CategoriaPeca categoria
+        -codigoBarras: String
+        -fornecedorMarca: String
+        -quantidadeEstoque: Integer
+        -precoCusto: BigDecimal
+        -precoVenda: BigDecimal
+        -tamanho: String
+        -cor: String
+        -categoria: CategoriaPeca
     }
 
     class AtualizarPecaRequest {
-        -Integer quantidadeEstoque
-        -BigDecimal precoCusto
-        -BigDecimal precoVenda
+        -quantidadeEstoque: Integer
+        -precoCusto: BigDecimal
+        -precoVenda: BigDecimal
     }
 
     class CriarServicoRequest {
-        -String nome
-        -Integer duracaoEstimadaMinutos
-        -BigDecimal custoTabelado
+        -nome: String
+        -duracaoEstimadaMinutos: Integer
+        -custoTabelado: BigDecimal
     }
 
     class AtualizarServicoRequest {
-        -Integer duracaoEstimadaMinutos
-        -BigDecimal custoTabelado
+        -duracaoEstimadaMinutos: Integer
+        -custoTabelado: BigDecimal
     }
 
     class ApiError {
         <<record>>
-        +LocalDateTime timestamp
-        +int status
-        +String error
-        +String message
-        +String path
-        +Map~String_String~ campos
+        +timestamp: LocalDateTime
+        +status: int
+        +error: String
+        +message: String
+        +path: String
+        +campos: Map~String_String~
     }
 
     class RecursoNaoEncontradoException {
-        +RecursoNaoEncontradoException(String message)
+        +RecursoNaoEncontradoException(message: String)
     }
 
     class GlobalExceptionHandler {
-        +tratarRecursoNaoEncontrado(RecursoNaoEncontradoException, HttpServletRequest) ResponseEntity~ApiError~
-        +tratarValidacao(MethodArgumentNotValidException, HttpServletRequest) ResponseEntity~ApiError~
-        +tratarCorpoInvalido(HttpMessageNotReadableException, HttpServletRequest) ResponseEntity~ApiError~
-        +tratarParametroInvalido(MethodArgumentTypeMismatchException, HttpServletRequest) ResponseEntity~ApiError~
+        +tratarRecursoNaoEncontrado(ex: RecursoNaoEncontradoException, request: HttpServletRequest): ResponseEntity~ApiError~
+        +tratarValidacao(ex: MethodArgumentNotValidException, request: HttpServletRequest): ResponseEntity~ApiError~
+        +tratarCorpoInvalido(ex: HttpMessageNotReadableException, request: HttpServletRequest): ResponseEntity~ApiError~
+        +tratarParametroInvalido(ex: MethodArgumentTypeMismatchException, request: HttpServletRequest): ResponseEntity~ApiError~
     }
 
     class PecaController
