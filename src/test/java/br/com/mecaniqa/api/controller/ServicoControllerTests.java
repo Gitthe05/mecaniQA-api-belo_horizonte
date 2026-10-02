@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import br.com.mecaniqa.api.exception.GlobalExceptionHandler;
 import br.com.mecaniqa.api.model.Servico;
 import br.com.mecaniqa.api.repository.ServicoRepository;
+import br.com.mecaniqa.api.service.ServicoService;
 
 class ServicoControllerTests {
 
@@ -31,7 +32,7 @@ class ServicoControllerTests {
 	void configurar() {
 		limparRepository();
 		mockMvc = MockMvcBuilders
-				.standaloneSetup(new ServicoController())
+				.standaloneSetup(new ServicoController(new ServicoService()))
 				.setControllerAdvice(new GlobalExceptionHandler())
 				.build();
 	}

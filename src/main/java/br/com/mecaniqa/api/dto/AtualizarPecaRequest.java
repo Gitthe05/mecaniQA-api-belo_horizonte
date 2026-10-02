@@ -20,6 +20,9 @@ public class AtualizarPecaRequest {
 	@DecimalMin(value = "0.0", inclusive = true, message = "deve ser maior ou igual a zero")
 	private BigDecimal precoVenda;
 
+	public AtualizarPecaRequest() {
+	}
+
 	public Integer getQuantidadeEstoque() {
 		return quantidadeEstoque;
 	}

@@ -1,195 +1,121 @@
-# Diagrama de Classes - API MecâniQA
+# Diagrama de Classes - API MecâniQA OAT 2
 
-## Núcleo da aplicação
+O diagrama representa as entidades, a entidade associativa, os DTOs, os mappers,
+o Builder de Ordem de Serviço e os repositories Singleton em memória.
 
 ```mermaid
 classDiagram
     direction LR
 
-    class CategoriaPeca {
+    class StatusOrdemServico {
         <<enumeration>>
-        MOTOR
-        SUSPENSAO
-        FREIOS
-        ELETRICA
-        ACESSORIOS
+        ABERTO
+        PENDENTE_DE_PAGAMENTO
+        PAGO
+        EM_EXECUCAO
+        EXECUTADO
     }
-
-    class Peca {
+    class StatusPedidoPecas {
+        <<enumeration>>
+        ORCANDO
+        PENDENTE_DE_PAGAMENTO
+        PAGO_FATURADO
+        ENTREGUE
+    }
+    class Peca
+    class Servico
+    class OrdemDeServico {
         -codigo: Long
-        -codigoBarras: String
-        -fornecedorMarca: String
-        -quantidadeEstoque: Integer
-        -precoCusto: BigDecimal
-        -precoVenda: BigDecimal
-        -dataCadastro: LocalDateTime
-        -dataUltimaAtualizacao: LocalDateTime
-        -tamanho: String
-        -cor: String
-        -categoria: CategoriaPeca
-        +getCodigo(): Long
-        +setCodigo(codigo: Long): void
-        +getQuantidadeEstoque(): Integer
-        +setQuantidadeEstoque(quantidade: Integer): void
-        +getPrecoCusto(): BigDecimal
-        +setPrecoCusto(preco: BigDecimal): void
-        +getPrecoVenda(): BigDecimal
-        +setPrecoVenda(preco: BigDecimal): void
-    }
-
-    class Servico {
-        -codigo: Long
-        -nome: String
-        -duracaoEstimadaMinutos: Integer
-        -custoTabelado: BigDecimal
-        -dataCriacao: LocalDateTime
-        -dataUltimaAtualizacao: LocalDateTime
-        +getCodigo(): Long
-        +setCodigo(codigo: Long): void
-        +getDuracaoEstimadaMinutos(): Integer
-        +setDuracaoEstimadaMinutos(minutos: Integer): void
-        +getCustoTabelado(): BigDecimal
-        +setCustoTabelado(custo: BigDecimal): void
-    }
-
-    class PecaRepository {
-        <<Singleton>>
-        -INSTANCE: PecaRepository
+        -cliente: String
+        -veiculo: String
+        -descricao: String
+        -status: StatusOrdemServico
         -pecas: List~Peca~
-        -proximoCodigo: AtomicLong
-        -PecaRepository()
-        +getInstance(): PecaRepository
-        +salvar(peca: Peca): Peca
-        +listarTodos(): List~Peca~
-        +buscarPorCodigo(codigo: Long): Optional~Peca~
-        +atualizar(codigo: Long, quantidade: Integer, custo: BigDecimal, venda: BigDecimal): Optional~Peca~
-        +excluir(codigo: Long): boolean
-    }
-
-    class ServicoRepository {
-        <<Singleton>>
-        -INSTANCE: ServicoRepository
         -servicos: List~Servico~
-        -proximoCodigo: AtomicLong
-        -ServicoRepository()
-        +getInstance(): ServicoRepository
-        +salvar(servico: Servico): Servico
-        +listarTodos(): List~Servico~
-        +buscarPorCodigo(codigo: Long): Optional~Servico~
-        +atualizar(codigo: Long, duracao: Integer, custo: BigDecimal): Optional~Servico~
-        +excluir(codigo: Long): boolean
+        +builder(): Builder
+    }
+    class OrdemServico_Builder {
+        -cliente: String
+        -veiculo: String
+        -descricao: String
+        -status: StatusOrdemServico
+        -pecas: List~Peca~
+        -servicos: List~Servico~
+        +cliente(valor): Builder
+        +veiculo(valor): Builder
+        +descricao(valor): Builder
+        +status(valor): Builder
+        +pecas(valor): Builder
+        +servicos(valor): Builder
+        +build(): OrdemDeServico
+    }
+    class PedidoPecas {
+        -codigo: Long
+        -fornecedor: String
+        -status: StatusPedidoPecas
+        -itens: List~ItemPedidoPeca~
+        +adicionarItem(peca, quantidade): void
+    }
+    class ItemPedidoPeca {
+        -pedido: PedidoPecas
+        -peca: Peca
+        -quantidade: Integer
     }
 
-    class PecaController {
-        -repository: PecaRepository
-        +criar(request: CriarPecaRequest): ResponseEntity~Peca~
-        +listar(): ResponseEntity~List~Peca~~
-        +buscar(codigo: Long): ResponseEntity~Peca~
-        +atualizar(codigo: Long, request: AtualizarPecaRequest): ResponseEntity~Peca~
-        +excluir(codigo: Long): ResponseEntity~Void~
+    OrdemDeServico --> StatusOrdemServico
+    OrdemDeServico o-- Peca
+    OrdemDeServico o-- Servico
+    OrdemServico_Builder ..> OrdemDeServico : constrói
+    PedidoPecas --> StatusPedidoPecas
+    PedidoPecas *-- ItemPedidoPeca
+    ItemPedidoPeca --> Peca
+
+    class CriarOrdemServicoRequest
+    class AtualizarStatusOrdemServicoRequest
+    class OrdemServicoResponse
+    class CriarPedidoPecasRequest
+    class ItemPedidoRequest
+    class AtualizarStatusPedidoRequest
+    class PedidoPecasResponse
+    class PecaResponse
+    class ServicoResponse
+    class OrdemServicoMapper {
+        +toEntity(dto, pecas, servicos): OrdemDeServico
+        +toResponse(entidade): OrdemServicoResponse
+    }
+    class PedidoPecasMapper {
+        +toEntity(dto): PedidoPecas
+        +toResponse(entidade): PedidoPecasResponse
     }
 
-    class ServicoController {
-        -repository: ServicoRepository
-        +criar(request: CriarServicoRequest): ResponseEntity~Servico~
-        +listar(): ResponseEntity~List~Servico~~
-        +buscar(codigo: Long): ResponseEntity~Servico~
-        +atualizar(codigo: Long, request: AtualizarServicoRequest): ResponseEntity~Servico~
-        +excluir(codigo: Long): ResponseEntity~Void~
+    CriarOrdemServicoRequest ..> OrdemServicoMapper
+    OrdemServicoMapper ..> OrdemDeServico
+    OrdemServicoMapper ..> OrdemServicoResponse
+    CriarPedidoPecasRequest ..> PedidoPecasMapper
+    ItemPedidoRequest ..> PedidoPecas
+    PedidoPecasMapper ..> PedidoPecas
+    PedidoPecasMapper ..> PedidoPecasResponse
+
+    class OrdemServicoRepository {
+        <<Singleton>>
+        -INSTANCE: OrdemServicoRepository
+        +getInstance(): OrdemServicoRepository
+        +salvar(ordem): OrdemDeServico
+        +buscarPorCodigo(codigo): Optional~OrdemDeServico~
+        +atualizarStatus(codigo, status): Optional~OrdemDeServico~
+    }
+    class PedidoPecasRepository {
+        <<Singleton>>
+        -INSTANCE: PedidoPecasRepository
+        +getInstance(): PedidoPecasRepository
+        +salvar(pedido): PedidoPecas
+        +adicionarItem(codigo, peca, quantidade): Optional~PedidoPecas~
+        +atualizarStatus(codigo, status): Optional~PedidoPecas~
     }
 
-    Peca --> CategoriaPeca : categoria obrigatória
-    PecaRepository o-- Peca : mantém em memória
-    ServicoRepository o-- Servico : mantém em memória
-    PecaController --> PecaRepository : getInstance()
-    ServicoController --> ServicoRepository : getInstance()
+    OrdemServicoRepository o-- OrdemDeServico
+    PedidoPecasRepository o-- PedidoPecas
 ```
 
-Os repositories possuem construtor privado, instância estática única e método público
-`getInstance()`. Não existe injeção de dependência entre controllers e repositories.
-
-## DTOs e tratamento de erros
-
-```mermaid
-classDiagram
-    direction LR
-
-    class CriarPecaRequest {
-        -codigoBarras: String
-        -fornecedorMarca: String
-        -quantidadeEstoque: Integer
-        -precoCusto: BigDecimal
-        -precoVenda: BigDecimal
-        -tamanho: String
-        -cor: String
-        -categoria: CategoriaPeca
-    }
-
-    class AtualizarPecaRequest {
-        -quantidadeEstoque: Integer
-        -precoCusto: BigDecimal
-        -precoVenda: BigDecimal
-    }
-
-    class CriarServicoRequest {
-        -nome: String
-        -duracaoEstimadaMinutos: Integer
-        -custoTabelado: BigDecimal
-    }
-
-    class AtualizarServicoRequest {
-        -duracaoEstimadaMinutos: Integer
-        -custoTabelado: BigDecimal
-    }
-
-    class ApiError {
-        <<record>>
-        +timestamp: LocalDateTime
-        +status: int
-        +error: String
-        +message: String
-        +path: String
-        +campos: Map~String_String~
-    }
-
-    class RecursoNaoEncontradoException {
-        +RecursoNaoEncontradoException(message: String)
-    }
-
-    class GlobalExceptionHandler {
-        +tratarRecursoNaoEncontrado(ex: RecursoNaoEncontradoException, request: HttpServletRequest): ResponseEntity~ApiError~
-        +tratarValidacao(ex: MethodArgumentNotValidException, request: HttpServletRequest): ResponseEntity~ApiError~
-        +tratarCorpoInvalido(ex: HttpMessageNotReadableException, request: HttpServletRequest): ResponseEntity~ApiError~
-        +tratarParametroInvalido(ex: MethodArgumentTypeMismatchException, request: HttpServletRequest): ResponseEntity~ApiError~
-    }
-
-    class PecaController
-    class ServicoController
-
-    PecaController ..> CriarPecaRequest
-    PecaController ..> AtualizarPecaRequest
-    ServicoController ..> CriarServicoRequest
-    ServicoController ..> AtualizarServicoRequest
-    GlobalExceptionHandler --> ApiError : produz
-    GlobalExceptionHandler ..> RecursoNaoEncontradoException : trata
-```
-
-## Fluxo principal
-
-```mermaid
-sequenceDiagram
-    participant Cliente
-    participant Controller
-    participant DTO
-    participant Repository
-    participant Memoria as Lista em memória
-
-    Cliente->>Controller: Requisição HTTP + JSON
-    Controller->>DTO: Desserializa e valida
-    DTO-->>Controller: Dados válidos
-    Controller->>Repository: getInstance() + operação
-    Repository->>Memoria: CRUD
-    Memoria-->>Repository: Resultado
-    Repository-->>Controller: Entidade ou Optional vazio
-    Controller-->>Cliente: ResponseEntity + status HTTP
-```
+Os controllers nunca recebem ou devolvem entidades de domínio: a fronteira HTTP usa
+exclusivamente DTOs. Os mappers concentram a conversão entre os dois contextos.

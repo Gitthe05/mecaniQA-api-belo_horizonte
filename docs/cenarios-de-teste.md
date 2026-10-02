@@ -2,8 +2,8 @@
 
 ## Escopo
 
-Esta matriz cobre o CRUD de peças e serviços, validações de entrada, respostas HTTP,
-tratamento de erros e o comportamento dos repositories Singleton em memória.
+Esta matriz cobre o CRUD de peças e serviços, ordens de serviço, pedidos de peças,
+validações de entrada, respostas HTTP e os repositories Singleton em memória.
 
 Os testes de banco de dados não se aplicam a esta entrega: o armazenamento em memória é
 um requisito explícito e o uso de banco, Spring Data e injeção de dependência é proibido.
@@ -58,10 +58,29 @@ um requisito explícito e o uso de banco, Spring Data e injeção de dependênci
 | REP-07 | Tentar incluir item na lista retornada | Negativo | `UnsupportedOperationException` | `deveProtegerAListaInternaContraInclusoesExternas` |
 | REP-08 | Reiniciar a aplicação | Arquitetural | Dados anteriores deixam de existir | Validado pelo desenho em memória; não automatizado dentro da mesma JVM |
 
+## Ordens de serviço
+
+| ID | Cenário | Tipo | Resultado esperado | Teste automatizado |
+|---|---|---|---|---|
+| OS-01 | Criar OS com peça e serviço existentes | Positivo | `201 Created`, status `ABERTO` e DTO completo | `deveCriarConsultarEAtualizarStatusDaOrdemComBuilderEDtos` |
+| OS-02 | Consultar OS e alterar status | Positivo | `200 OK` e status `EM_EXECUCAO` | `deveCriarConsultarEAtualizarStatusDaOrdemComBuilderEDtos` |
+| OS-03 | Criar OS com campos vazios | Negativo | `400 Bad Request` | `deveValidarDadosEReferencias` |
+| OS-04 | Criar OS com peça inexistente | Negativo | `404 Not Found` | `deveValidarDadosEReferencias` |
+
+## Pedidos de peças
+
+| ID | Cenário | Tipo | Resultado esperado | Teste automatizado |
+|---|---|---|---|---|
+| PED-01 | Criar pedido com item | Positivo | `201 Created`, status `ORCANDO` e quantidade correta | `deveCriarAdicionarPecasSomarQuantidadeEAtualizarStatus` |
+| PED-02 | Adicionar novamente a mesma peça | Regra de negócio | Quantidades somadas no item associativo | `deveCriarAdicionarPecasSomarQuantidadeEAtualizarStatus` |
+| PED-03 | Alterar status do pedido | Positivo | `200 OK` e status `PAGO_FATURADO` | `deveCriarAdicionarPecasSomarQuantidadeEAtualizarStatus` |
+| PED-04 | Informar quantidade zero | Negativo | `400 Bad Request` | `deveRejeitarQuantidadeInvalidaEPecaInexistente` |
+| PED-05 | Informar peça inexistente | Negativo | `404 Not Found` | `deveRejeitarQuantidadeInvalidaEPecaInexistente` |
+
 ## Execução
 
 ```powershell
-$env:JAVA_HOME = (Resolve-Path .\.tools\jdk-21).Path
+$env:JAVA_HOME = "C:\caminho\para\o\jdk-21"
 .\gradlew.bat test
 ```
 
@@ -69,7 +88,7 @@ O relatório HTML é gerado em `build/reports/tests/test/index.html`.
 
 ## Resultado da execução
 
-Execução realizada em 25/08/2026 com Java Temurin 21 e Gradle 9.5.1:
+Execução realizada em 28/09/2026 com Java Temurin 21 e Gradle 9.5.1:
 
 | Suíte | Testes | Falhas |
 |---|---:|---:|
@@ -78,6 +97,8 @@ Execução realizada em 25/08/2026 com Java Temurin 21 e Gradle 9.5.1:
 | Controller de serviços | 8 | 0 |
 | Repository de peças | 4 | 0 |
 | Repository de serviços | 4 | 0 |
-| **Total** | **26** | **0** |
+| Controller de ordens de serviço | 2 | 0 |
+| Controller de pedidos de peças | 2 | 0 |
+| **Total** | **30** | **0** |
 
 Resultado final: `BUILD SUCCESSFUL`.

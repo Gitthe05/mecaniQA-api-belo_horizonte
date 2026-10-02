@@ -34,6 +34,9 @@ public class CriarPecaRequest {
 	@NotNull(message = "é obrigatória")
 	private CategoriaPeca categoria;
 
+	public CriarPecaRequest() {
+	}
+
 	public String getCodigoBarras() {
 		return codigoBarras;
 	}

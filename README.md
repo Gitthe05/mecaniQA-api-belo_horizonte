@@ -1,12 +1,13 @@
 # MecâniQA API - Belo Horizonte
 
-API REST do catálogo de peças e serviços da oficina fictícia MecâniQA, desenvolvida em
-Java e Spring Boot para a OAT 1 da disciplina de Desenvolvimento Web Orientado a Objetos.
+API REST da oficina fictícia MecâniQA, desenvolvida em Java e Spring Boot para a OAT 2
+da disciplina de Desenvolvimento Web Orientado a Objetos.
 
 ## Visão geral
 
-O projeto implementa o CRUD de peças e serviços com persistência exclusivamente em
-memória. Cada tipo de recurso possui um repository manual baseado no padrão Singleton.
+O projeto mantém o catálogo de peças e serviços e implementa ordens de serviço e pedidos
+de peças com persistência exclusivamente em memória. Cada tipo de recurso possui um
+repository manual baseado no padrão Singleton.
 
 Por requisito da atividade, o projeto não utiliza banco de dados, Spring Data ou injeção
 de dependência (`@Autowired`). Os dados são perdidos quando a aplicação é encerrada.
@@ -32,6 +33,11 @@ de dependência (`@Autowired`). Os dados são perdidos quando a aplicação é e
 - Erros JSON padronizados.
 - Status HTTP semânticos.
 - Armazenamento em memória por repositories Singleton.
+- Criação de ordens de serviço pelo padrão Builder.
+- Alteração dos cinco status obrigatórios da OS.
+- Criação de pedidos e alteração dos quatro status obrigatórios.
+- Associação pedido–peça por itens com quantidade.
+- DTOs de entrada e saída e mappers em toda a fronteira HTTP.
 
 ## Pré-requisitos
 
@@ -221,6 +227,47 @@ Resposta `200 OK`: serviço atualizado, preservando código, nome e data de cria
 
 `DELETE /api/servicos/1` retorna `204 No Content`, sem corpo.
 
+### Ordens de serviço
+
+| Método | URL | Descrição |
+|---|---|---|
+| `POST` | `/api/ordens-servico` | Cria uma OS com peças e serviços opcionais |
+| `GET` | `/api/ordens-servico` | Lista as ordens |
+| `GET` | `/api/ordens-servico/{codigo}` | Consulta uma ordem |
+| `PATCH` | `/api/ordens-servico/{codigo}/status` | Modifica o status |
+
+```json
+{
+  "cliente": "Ana Souza",
+  "veiculo": "ABC-1234",
+  "descricao": "Troca das pastilhas de freio",
+  "codigosPecas": [1],
+  "codigosServicos": [1]
+}
+```
+
+Status: `ABERTO`, `PENDENTE_DE_PAGAMENTO`, `PAGO`, `EM_EXECUCAO` e `EXECUTADO`.
+
+### Pedidos de peças
+
+| Método | URL | Descrição |
+|---|---|---|
+| `POST` | `/api/pedidos-pecas` | Cria um pedido, com itens opcionais |
+| `GET` | `/api/pedidos-pecas` | Lista os pedidos |
+| `GET` | `/api/pedidos-pecas/{codigo}` | Consulta um pedido |
+| `POST` | `/api/pedidos-pecas/{codigo}/itens` | Adiciona uma peça e sua quantidade |
+| `PATCH` | `/api/pedidos-pecas/{codigo}/status` | Modifica o status |
+
+```json
+{
+  "fornecedor": "Distribuidora X",
+  "itens": [{ "codigoPeca": 1, "quantidade": 4 }]
+}
+```
+
+Status: `ORCANDO`, `PENDENTE_DE_PAGAMENTO`, `PAGO_FATURADO` e `ENTREGUE`. Se uma peça
+já existente for adicionada novamente, a quantidade é somada ao item associativo.
+
 ## Validações
 
 - Textos obrigatórios não podem estar vazios.
@@ -254,21 +301,24 @@ Erros de recurso inexistente seguem o mesmo formato com status `404`.
 .\gradlew.bat test
 ```
 
-A suíte atual possui 26 testes automatizados, sem falhas. O relatório HTML é gerado em
+A suíte atual possui 30 testes automatizados, sem falhas. O relatório HTML é gerado em
 `build/reports/tests/test/index.html`.
 
 Consulte a [matriz completa de cenários](docs/cenarios-de-teste.md).
 
 ## Collection Postman
 
-Importe
-[`postman/MecaniQA-OAT1.postman_collection.json`](postman/MecaniQA-OAT1.postman_collection.json)
-no Postman. Execute as requisições de cada pasta na ordem apresentada; os códigos criados
-são armazenados automaticamente nas variáveis da collection.
+Importe [`postman/MecaniQA-OAT2.postman_collection.json`](postman/MecaniQA-OAT2.postman_collection.json)
+no Postman. Execute as requisições na ordem apresentada; os códigos criados são
+armazenados automaticamente nas variáveis da collection. A collection da OAT 1 foi
+preservada como histórico.
 
 ## Diagrama de classes
 
-O UML completo está em [docs/diagrama-classes.md](docs/diagrama-classes.md).
+O UML completo está em [docs/diagrama-classes.md](docs/diagrama-classes.md). O diagrama
+de atividade está em [docs/diagrama-atividade-criar-os.md](docs/diagrama-atividade-criar-os.md).
+Os dois diagramas exigidos para a entrega também estão reunidos em
+[apresentacoes/DIAGRAMAS.md](apresentacoes/DIAGRAMAS.md).
 
 ## Estrutura do projeto
 
@@ -277,10 +327,12 @@ src/
 ├── main/
 │   ├── java/br/com/mecaniqa/api/
 │   │   ├── controller/   # Endpoints REST
-│   │   ├── dto/          # Corpos de cadastro e atualização
+    │   │   ├── dto/          # DTOs de entrada e saída
 │   │   ├── exception/    # Respostas e tratamento de erros
-│   │   ├── model/        # Peça, serviço e categoria
-│   │   ├── repository/   # Armazenamento Singleton em memória
+    │   │   ├── mapper/       # Conversões DTO ↔ domínio
+    │   │   ├── model/        # Peça, serviço, OS, pedido, item e enums
+    │   │   ├── repository/   # Armazenamento Singleton em memória
+    │   │   ├── service/      # Regras e orquestração das histórias da OAT 2
 │   │   └── ApiApplication.java
 │   └── resources/application.properties
 └── test/java/br/com/mecaniqa/api/
@@ -300,9 +352,15 @@ Controller REST
     ↓
 Validação do DTO
     ↓
+Mapper DTO → domínio
+    ↓
+Service
+    ↓
 Repository Singleton
     ↓
 Lista em memória
+    ↓
+Mapper domínio → DTO de resposta
 ```
 
 Os controllers acessam os repositories exclusivamente por `getInstance()`, conforme a

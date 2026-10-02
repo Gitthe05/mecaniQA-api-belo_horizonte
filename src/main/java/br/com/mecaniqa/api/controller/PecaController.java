@@ -15,64 +15,47 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.mecaniqa.api.dto.AtualizarPecaRequest;
 import br.com.mecaniqa.api.dto.CriarPecaRequest;
-import br.com.mecaniqa.api.exception.RecursoNaoEncontradoException;
-import br.com.mecaniqa.api.model.Peca;
-import br.com.mecaniqa.api.repository.PecaRepository;
+import br.com.mecaniqa.api.dto.PecaResponse;
+import br.com.mecaniqa.api.service.PecaService;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/pecas")
 public class PecaController {
 
-	private final PecaRepository repository = PecaRepository.getInstance();
+	private final PecaService service;
+
+	public PecaController(PecaService service) {
+		this.service = service;
+	}
 
 	@PostMapping
-	public ResponseEntity<Peca> criar(@Valid @RequestBody CriarPecaRequest request) {
-		Peca peca = new Peca(
-				request.getCodigoBarras(),
-				request.getFornecedorMarca(),
-				request.getQuantidadeEstoque(),
-				request.getPrecoCusto(),
-				request.getPrecoVenda(),
-				request.getTamanho(),
-				request.getCor(),
-				request.getCategoria());
-
-		Peca pecaCriada = repository.salvar(peca);
+	public ResponseEntity<PecaResponse> criar(@Valid @RequestBody CriarPecaRequest request) {
+		PecaResponse pecaCriada = service.criar(request);
 		URI localizacao = URI.create("/api/pecas/" + pecaCriada.getCodigo());
 		return ResponseEntity.created(localizacao).body(pecaCriada);
 	}
 
 	@GetMapping
-	public ResponseEntity<List<Peca>> listar() {
-		return ResponseEntity.ok(repository.listarTodos());
+	public ResponseEntity<List<PecaResponse>> listar() {
+		return ResponseEntity.ok(service.listar());
 	}
 
 	@GetMapping("/{codigo}")
-	public ResponseEntity<Peca> buscar(@PathVariable Long codigo) {
-		Peca peca = repository.buscarPorCodigo(codigo)
-				.orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada"));
-		return ResponseEntity.ok(peca);
+	public ResponseEntity<PecaResponse> buscar(@PathVariable Long codigo) {
+		return ResponseEntity.ok(service.buscar(codigo));
 	}
 
 	@PutMapping("/{codigo}")
-	public ResponseEntity<Peca> atualizar(
+	public ResponseEntity<PecaResponse> atualizar(
 			@PathVariable Long codigo,
 			@Valid @RequestBody AtualizarPecaRequest request) {
-		Peca peca = repository.atualizar(
-				codigo,
-				request.getQuantidadeEstoque(),
-				request.getPrecoCusto(),
-				request.getPrecoVenda())
-				.orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada"));
-		return ResponseEntity.ok(peca);
+		return ResponseEntity.ok(service.atualizar(codigo, request));
 	}
 
 	@DeleteMapping("/{codigo}")
 	public ResponseEntity<Void> excluir(@PathVariable Long codigo) {
-		if (!repository.excluir(codigo)) {
-			throw new RecursoNaoEncontradoException("Peça não encontrada");
-		}
+		service.excluir(codigo);
 		return ResponseEntity.noContent().build();
 	}
 }

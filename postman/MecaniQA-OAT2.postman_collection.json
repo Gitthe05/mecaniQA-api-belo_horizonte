@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "MecâniQA OAT 2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "codigoPeca", "value": "" },
+    { "key": "codigoServico", "value": "" },
+    { "key": "codigoOs", "value": "" },
+    { "key": "codigoPedido", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1 - Criar peça",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"codigoBarras\": \"7890000000001\",\n  \"fornecedorMarca\": \"Bosch\",\n  \"quantidadeEstoque\": 10,\n  \"precoCusto\": 80,\n  \"precoVenda\": 120,\n  \"categoria\": \"FREIOS\"\n}" },
+        "url": "{{baseUrl}}/api/pecas"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('codigoPeca', pm.response.json().codigo);"] } }]
+    },
+    {
+      "name": "2 - Criar serviço",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Troca de pastilhas\",\n  \"duracaoEstimadaMinutos\": 45,\n  \"custoTabelado\": 100\n}" },
+        "url": "{{baseUrl}}/api/servicos"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('codigoServico', pm.response.json().codigo);"] } }]
+    },
+    {
+      "name": "3 - Criar ordem de serviço",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"cliente\": \"Ana Souza\",\n  \"veiculo\": \"ABC-1234\",\n  \"descricao\": \"Troca das pastilhas\",\n  \"codigosPecas\": [{{codigoPeca}}],\n  \"codigosServicos\": [{{codigoServico}}]\n}" },
+        "url": "{{baseUrl}}/api/ordens-servico"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('codigoOs', pm.response.json().codigo);"] } }]
+    },
+    {
+      "name": "4 - Atualizar status da OS",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"status\": \"EM_EXECUCAO\" }" },
+        "url": "{{baseUrl}}/api/ordens-servico/{{codigoOs}}/status"
+      }
+    },
+    {
+      "name": "5 - Criar pedido de peças",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"fornecedor\": \"Distribuidora X\",\n  \"itens\": [{ \"codigoPeca\": {{codigoPeca}}, \"quantidade\": 2 }]\n}" },
+        "url": "{{baseUrl}}/api/pedidos-pecas"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('codigoPedido', pm.response.json().codigo);"] } }]
+    },
+    {
+      "name": "6 - Adicionar peça ao pedido",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"codigoPeca\": {{codigoPeca}}, \"quantidade\": 3 }" },
+        "url": "{{baseUrl}}/api/pedidos-pecas/{{codigoPedido}}/itens"
+      }
+    },
+    {
+      "name": "7 - Atualizar status do pedido",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"status\": \"PAGO_FATURADO\" }" },
+        "url": "{{baseUrl}}/api/pedidos-pecas/{{codigoPedido}}/status"
+      }
+    }
+  ]
+}

@@ -16,6 +16,9 @@ public class AtualizarServicoRequest {
 	@DecimalMin(value = "0.0", inclusive = true, message = "deve ser maior ou igual a zero")
 	private BigDecimal custoTabelado;
 
+	public AtualizarServicoRequest() {
+	}
+
 	public Integer getDuracaoEstimadaMinutos() {
 		return duracaoEstimadaMinutos;
 	}

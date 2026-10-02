@@ -22,6 +22,7 @@ import br.com.mecaniqa.api.exception.GlobalExceptionHandler;
 import br.com.mecaniqa.api.model.CategoriaPeca;
 import br.com.mecaniqa.api.model.Peca;
 import br.com.mecaniqa.api.repository.PecaRepository;
+import br.com.mecaniqa.api.service.PecaService;
 
 class PecaControllerTests {
 
@@ -32,7 +33,7 @@ class PecaControllerTests {
 	void configurar() {
 		limparRepository();
 		mockMvc = MockMvcBuilders
-				.standaloneSetup(new PecaController())
+				.standaloneSetup(new PecaController(new PecaService()))
 				.setControllerAdvice(new GlobalExceptionHandler())
 				.build();
 	}

@@ -2,6 +2,7 @@ package br.com.mecaniqa.api.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Peca {
 
@@ -125,5 +126,21 @@ public class Peca {
 
 	public void setCategoria(CategoriaPeca categoria) {
 		this.categoria = categoria;
+	}
+
+	@Override
+	public boolean equals(Object objeto) {
+		if (this == objeto) {
+			return true;
+		}
+		if (!(objeto instanceof Peca outra)) {
+			return false;
+		}
+		return codigo != null && Objects.equals(codigo, outra.codigo);
+	}
+
+	@Override
+	public int hashCode() {
+		return codigo == null ? 0 : Objects.hash(codigo);
 	}
 }

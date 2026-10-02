@@ -2,6 +2,7 @@ package br.com.mecaniqa.api.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Servico {
 
@@ -67,5 +68,21 @@ public class Servico {
 
 	public void setDataUltimaAtualizacao(LocalDateTime dataUltimaAtualizacao) {
 		this.dataUltimaAtualizacao = dataUltimaAtualizacao;
+	}
+
+	@Override
+	public boolean equals(Object objeto) {
+		if (this == objeto) {
+			return true;
+		}
+		if (!(objeto instanceof Servico outro)) {
+			return false;
+		}
+		return codigo != null && Objects.equals(codigo, outro.codigo);
+	}
+
+	@Override
+	public int hashCode() {
+		return codigo == null ? 0 : Objects.hash(codigo);
 	}
 }
