@@ -1,8 +1,8 @@
 package br.com.mecaniqa.api.model;
 
 public enum StatusPedidoPecas {
-	ORCANDO,
-	PENDENTE_DE_PAGAMENTO,
-	PAGO_FATURADO,
-	ENTREGUE
+  ORCANDO,
+  PENDENTE_DE_PAGAMENTO,
+  PAGO_FATURADO,
+  ENTREGUE
 }

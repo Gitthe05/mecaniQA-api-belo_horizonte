@@ -1,79 +1,82 @@
 package br.com.mecaniqa.api.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.math.BigDecimal;
-
-import org.junit.jupiter.api.AfterEach;
+import br.com.mecaniqa.api.dto.CriarOrdemServicoRequest;
+import br.com.mecaniqa.api.dto.OrdemServicoResponse;
+import br.com.mecaniqa.api.exception.RecursoNaoEncontradoException;
+import br.com.mecaniqa.api.model.StatusOrdemServico;
+import br.com.mecaniqa.api.service.OrdemDeServicoService;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import br.com.mecaniqa.api.exception.GlobalExceptionHandler;
-import br.com.mecaniqa.api.model.CategoriaPeca;
-import br.com.mecaniqa.api.model.Peca;
-import br.com.mecaniqa.api.model.Servico;
-import br.com.mecaniqa.api.repository.OrdemServicoRepository;
-import br.com.mecaniqa.api.repository.PecaRepository;
-import br.com.mecaniqa.api.repository.ServicoRepository;
-import br.com.mecaniqa.api.service.OrdemDeServicoService;
-
 class OrdemServicoControllerTests {
-	private final OrdemServicoRepository repository = OrdemServicoRepository.getInstance();
-	private final PecaRepository pecas = PecaRepository.getInstance();
-	private final ServicoRepository servicos = ServicoRepository.getInstance();
-	private MockMvc mockMvc;
+  private OrdemDeServicoService service;
+  private MockMvc mvc;
 
-	@BeforeEach
-	void configurar() {
-		limpar();
-		mockMvc = MockMvcBuilders.standaloneSetup(new OrdemServicoController(new OrdemDeServicoService()))
-				.setControllerAdvice(new GlobalExceptionHandler()).build();
-	}
+  @BeforeEach
+  void setup() {
+    service = mock(OrdemDeServicoService.class);
+    mvc = MockMvcBuilders.standaloneSetup(new OrdemServicoController(service)).build();
+  }
 
-	@AfterEach
-	void limpar() {
-		repository.listarTodos().forEach(o -> repository.excluir(o.getCodigo()));
-		pecas.listarTodos().forEach(p -> pecas.excluir(p.getCodigo()));
-		servicos.listarTodos().forEach(s -> servicos.excluir(s.getCodigo()));
-	}
+  @Test
+  void excluirOrdemInexistenteRetorna404() throws Exception {
+    doThrow(new RecursoNaoEncontradoException("Ordem de serviço não encontrada"))
+        .when(service)
+        .excluir(99999L);
+    mvc.perform(delete("/api/ordens-servico/99999")).andExpect(status().isNotFound());
+  }
 
-	@Test
-	void deveCriarConsultarEAtualizarStatusDaOrdemComBuilderEDtos() throws Exception {
-		Peca peca = pecas.salvar(new Peca("789", "Bosch", 2, BigDecimal.TEN,
-				new BigDecimal("15"), null, null, CategoriaPeca.FREIOS));
-		Servico servico = servicos.salvar(new Servico("Troca", 30, new BigDecimal("80")));
+  @Test
+  void criarOrdemRetornaRelacionamentosEStatusInicial() throws Exception {
+    LocalDateTime agora = LocalDateTime.now();
+    when(service.criar(any(CriarOrdemServicoRequest.class)))
+        .thenReturn(
+            new OrdemServicoResponse(
+                22L,
+                "Ana",
+                "ABC-1234",
+                "Reparo",
+                StatusOrdemServico.ABERTO,
+                List.of(),
+                List.of(),
+                agora,
+                agora));
 
-		String localizacao = mockMvc.perform(post("/api/ordens-servico").contentType(MediaType.APPLICATION_JSON)
-				.content("""
-						{"cliente":"Ana","veiculo":"ABC-1234","descricao":"Troca de pastilhas",
-						 "codigosPecas":[%d],"codigosServicos":[%d]}
-						""".formatted(peca.getCodigo(), servico.getCodigo())))
-				.andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("ABERTO"))
-				.andExpect(jsonPath("$.pecas[0].codigo").value(peca.getCodigo()))
-				.andExpect(jsonPath("$.servicos[0].codigo").value(servico.getCodigo()))
-				.andReturn().getResponse().getHeader("Location");
+    mvc.perform(
+            post("/api/ordens-servico")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cliente":"Ana","veiculo":"ABC-1234","descricao":"Reparo",
+                     "codigosPecas":[],"codigosServicos":[]}
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", "/api/ordens-servico/22"))
+        .andExpect(jsonPath("$.status").value("ABERTO"))
+        .andExpect(jsonPath("$.pecas").isArray())
+        .andExpect(jsonPath("$.servicos").isArray());
+  }
 
-		long codigo = Long.parseLong(localizacao.substring(localizacao.lastIndexOf('/') + 1));
-		mockMvc.perform(get("/api/ordens-servico/{codigo}", codigo)).andExpect(status().isOk());
-		mockMvc.perform(patch("/api/ordens-servico/{codigo}/status", codigo)
-				.contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"EM_EXECUCAO\"}"))
-				.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("EM_EXECUCAO"));
-	}
-
-	@Test
-	void deveValidarDadosEReferencias() throws Exception {
-		mockMvc.perform(post("/api/ordens-servico").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"cliente\":\"\",\"veiculo\":\"\",\"descricao\":\"\"}"))
-				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.campos.cliente").exists());
-		mockMvc.perform(post("/api/ordens-servico").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"cliente\":\"Ana\",\"veiculo\":\"ABC\",\"descricao\":\"Reparo\",\"codigosPecas\":[999]}"))
-				.andExpect(status().isNotFound()).andExpect(jsonPath("$.message").value("Peça não encontrada: 999"));
-	}
+  @Test
+  void dadosInvalidosRetornam400SemChamarService() throws Exception {
+    mvc.perform(
+            post("/api/ordens-servico")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cliente\":\"\",\"veiculo\":\"\",\"descricao\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.campos.cliente").exists());
+    verifyNoInteractions(service);
+  }
 }

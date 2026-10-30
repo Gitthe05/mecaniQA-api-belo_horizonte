@@ -1,61 +1,113 @@
 package br.com.mecaniqa.api.repository;
 
+import br.com.mecaniqa.api.config.ConexaoMySQL;
+import br.com.mecaniqa.api.mapper.ServicoResultSetMapper;
+import br.com.mecaniqa.api.model.Servico;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.stereotype.Repository;
 
-import br.com.mecaniqa.api.model.Servico;
+@Repository
+public class ServicoRepository extends RepositorioJdbcTemplate
+    implements Repositorio<Servico, Long> {
+  public ServicoRepository(ConexaoMySQL conexao) {
+    super(conexao);
+  }
 
-public final class ServicoRepository {
+  @Override
+  public Servico salvar(Servico s) {
+    return executar(
+        "salvar serviço",
+        c -> {
+          try (var ps =
+              c.prepareStatement(
+                  "INSERT INTO servicos (nome,duracao_estimada_minutos,custo_tabelado) VALUES"
+                      + " (?,?,?)",
+                  Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, s.getNome());
+            ps.setInt(2, s.getDuracaoEstimadaMinutos());
+            ps.setBigDecimal(3, s.getCustoTabelado());
+            ps.executeUpdate();
+            try (var keys = ps.getGeneratedKeys()) {
+              if (!keys.next()) throw new SQLException("Código do serviço não retornado");
+              s.setCodigo(keys.getLong(1));
+            }
+          }
+          return buscarPorCodigo(s.getCodigo())
+              .orElseThrow(() -> new SQLException("Serviço salvo não foi encontrado"));
+        });
+  }
 
-	private static final ServicoRepository INSTANCE = new ServicoRepository();
+  @Override
+  public Optional<Servico> buscarPorCodigo(Long id) {
+    return buscarPorCodigo(id, "servicos", ServicoResultSetMapper::mapear);
+  }
 
-	private final List<Servico> servicos = new ArrayList<>();
-	private final AtomicLong proximoCodigo = new AtomicLong(1);
+  @Override
+  public List<Servico> listarTodos() {
+    return executar(
+        "listar serviços",
+        c -> {
+          List<Servico> out = new ArrayList<>();
+          try (var ps = c.prepareStatement("SELECT * FROM servicos ORDER BY codigo");
+              var rs = ps.executeQuery()) {
+            while (rs.next()) out.add(ServicoResultSetMapper.mapear(rs));
+          }
+          return List.copyOf(out);
+        });
+  }
 
-	private ServicoRepository() {
-	}
+  public Optional<Servico> atualizar(Long id, Integer duracao, BigDecimal custo) {
+    return executar(
+        "atualizar serviço",
+        c -> {
+          try (var ps =
+              c.prepareStatement(
+                  "UPDATE servicos SET"
+                      + " duracao_estimada_minutos=?,custo_tabelado=?,data_ultima_atualizacao=CURRENT_TIMESTAMP"
+                      + " WHERE codigo=?")) {
+            ps.setInt(1, duracao);
+            ps.setBigDecimal(2, custo);
+            ps.setLong(3, id);
+            if (ps.executeUpdate() == 0) return Optional.empty();
+          }
+          return buscarPorCodigo(id);
+        });
+  }
 
-	public static ServicoRepository getInstance() {
-		return INSTANCE;
-	}
+  @Override
+  public Optional<Servico> atualizar(Long id, Servico s) {
+    return executar(
+        "atualizar serviço",
+        c -> {
+          try (var ps =
+              c.prepareStatement(
+                  "UPDATE servicos SET"
+                      + " nome=?,duracao_estimada_minutos=?,custo_tabelado=?,data_ultima_atualizacao=CURRENT_TIMESTAMP"
+                      + " WHERE codigo=?")) {
+            ps.setString(1, s.getNome());
+            ps.setInt(2, s.getDuracaoEstimadaMinutos());
+            ps.setBigDecimal(3, s.getCustoTabelado());
+            ps.setLong(4, id);
+            if (ps.executeUpdate() == 0) return Optional.empty();
+          }
+          return buscarPorCodigo(id);
+        });
+  }
 
-	public synchronized Servico salvar(Servico servico) {
-		LocalDateTime agora = LocalDateTime.now();
-		servico.setCodigo(proximoCodigo.getAndIncrement());
-		servico.setDataCriacao(agora);
-		servico.setDataUltimaAtualizacao(agora);
-		servicos.add(servico);
-		return servico;
-	}
-
-	public synchronized List<Servico> listarTodos() {
-		return List.copyOf(servicos);
-	}
-
-	public synchronized Optional<Servico> buscarPorCodigo(Long codigo) {
-		return servicos.stream()
-				.filter(servico -> servico.getCodigo().equals(codigo))
-				.findFirst();
-	}
-
-	public synchronized Optional<Servico> atualizar(
-			Long codigo,
-			Integer duracaoEstimadaMinutos,
-			BigDecimal custoTabelado) {
-		Optional<Servico> servicoEncontrado = buscarPorCodigo(codigo);
-		servicoEncontrado.ifPresent(servico -> {
-			servico.setDuracaoEstimadaMinutos(duracaoEstimadaMinutos);
-			servico.setCustoTabelado(custoTabelado);
-			servico.setDataUltimaAtualizacao(LocalDateTime.now());
-		});
-		return servicoEncontrado;
-	}
-
-	public synchronized boolean excluir(Long codigo) {
-		return servicos.removeIf(servico -> servico.getCodigo().equals(codigo));
-	}
+  @Override
+  public boolean excluir(Long id) {
+    return executar(
+        "excluir serviço",
+        c -> {
+          try (var ps = c.prepareStatement("DELETE FROM servicos WHERE codigo=?")) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+          }
+        });
+  }
 }

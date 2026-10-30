@@ -4,12 +4,16 @@ import br.com.mecaniqa.api.model.StatusOrdemServico;
 import jakarta.validation.constraints.NotNull;
 
 public class AtualizarStatusOrdemServicoRequest {
-	@NotNull(message = "é obrigatório")
-	private StatusOrdemServico status;
+  @NotNull(message = "é obrigatório")
+  private StatusOrdemServico status;
 
-	public AtualizarStatusOrdemServicoRequest() {
-	}
+  public AtualizarStatusOrdemServicoRequest() {}
 
-	public StatusOrdemServico getStatus() { return status; }
-	public void setStatus(StatusOrdemServico status) { this.status = status; }
+  public StatusOrdemServico getStatus() {
+    return status;
+  }
+
+  public void setStatus(StatusOrdemServico status) {
+    this.status = status;
+  }
 }

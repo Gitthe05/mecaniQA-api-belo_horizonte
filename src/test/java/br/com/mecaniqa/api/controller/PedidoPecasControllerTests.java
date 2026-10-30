@@ -1,72 +1,67 @@
 package br.com.mecaniqa.api.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.math.BigDecimal;
-
-import org.junit.jupiter.api.AfterEach;
+import br.com.mecaniqa.api.dto.CriarPedidoPecasRequest;
+import br.com.mecaniqa.api.dto.PedidoPecasResponse;
+import br.com.mecaniqa.api.exception.RecursoNaoEncontradoException;
+import br.com.mecaniqa.api.model.StatusPedidoPecas;
+import br.com.mecaniqa.api.service.PedidoPecasService;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import br.com.mecaniqa.api.exception.GlobalExceptionHandler;
-import br.com.mecaniqa.api.model.CategoriaPeca;
-import br.com.mecaniqa.api.model.Peca;
-import br.com.mecaniqa.api.repository.PecaRepository;
-import br.com.mecaniqa.api.repository.PedidoPecasRepository;
-import br.com.mecaniqa.api.service.PedidoPecasService;
-
 class PedidoPecasControllerTests {
-	private final PedidoPecasRepository repository = PedidoPecasRepository.getInstance();
-	private final PecaRepository pecas = PecaRepository.getInstance();
-	private MockMvc mockMvc;
+  private PedidoPecasService service;
+  private MockMvc mvc;
 
-	@BeforeEach
-	void configurar() {
-		limpar();
-		mockMvc = MockMvcBuilders.standaloneSetup(new PedidoPecasController(new PedidoPecasService()))
-				.setControllerAdvice(new GlobalExceptionHandler()).build();
-	}
+  @BeforeEach
+  void setup() {
+    service = mock(PedidoPecasService.class);
+    mvc = MockMvcBuilders.standaloneSetup(new PedidoPecasController(service)).build();
+  }
 
-	@AfterEach
-	void limpar() {
-		repository.listarTodos().forEach(p -> repository.excluir(p.getCodigo()));
-		pecas.listarTodos().forEach(p -> pecas.excluir(p.getCodigo()));
-	}
+  @Test
+  void excluirPedidoInexistenteRetorna404() throws Exception {
+    doThrow(new RecursoNaoEncontradoException("Pedido de peças não encontrado"))
+        .when(service)
+        .excluir(99999L);
+    mvc.perform(delete("/api/pedidos-pecas/99999")).andExpect(status().isNotFound());
+  }
 
-	@Test
-	void deveCriarAdicionarPecasSomarQuantidadeEAtualizarStatus() throws Exception {
-		Peca peca = pecas.salvar(new Peca("123", "NGK", 0, BigDecimal.TEN,
-				new BigDecimal("20"), null, null, CategoriaPeca.MOTOR));
-		String localizacao = mockMvc.perform(post("/api/pedidos-pecas").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"fornecedor\":\"Distribuidora X\",\"itens\":[{\"codigoPeca\":"
-						+ peca.getCodigo() + ",\"quantidade\":2}]}"))
-				.andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("ORCANDO"))
-				.andExpect(jsonPath("$.itens[0].quantidade").value(2))
-				.andReturn().getResponse().getHeader("Location");
-		long codigo = Long.parseLong(localizacao.substring(localizacao.lastIndexOf('/') + 1));
+  @Test
+  void cadastroValidoRetorna201ComPedidoOrcando() throws Exception {
+    LocalDateTime agora = LocalDateTime.now();
+    when(service.criar(any(CriarPedidoPecasRequest.class)))
+        .thenReturn(
+            new PedidoPecasResponse(
+                31L, "Distribuidora X", StatusPedidoPecas.ORCANDO, List.of(), agora, agora));
 
-		mockMvc.perform(post("/api/pedidos-pecas/{codigo}/itens", codigo)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"codigoPeca\":" + peca.getCodigo() + ",\"quantidade\":3}"))
-				.andExpect(status().isOk()).andExpect(jsonPath("$.itens[0].quantidade").value(5));
-		mockMvc.perform(patch("/api/pedidos-pecas/{codigo}/status", codigo)
-				.contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PAGO_FATURADO\"}"))
-				.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PAGO_FATURADO"));
-	}
+    mvc.perform(
+            post("/api/pedidos-pecas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fornecedor\":\"Distribuidora X\",\"itens\":[]}"))
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", "/api/pedidos-pecas/31"))
+        .andExpect(jsonPath("$.status").value("ORCANDO"));
+  }
 
-	@Test
-	void deveRejeitarQuantidadeInvalidaEPecaInexistente() throws Exception {
-		mockMvc.perform(post("/api/pedidos-pecas").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"fornecedor\":\"X\",\"itens\":[{\"codigoPeca\":1,\"quantidade\":0}]}"))
-				.andExpect(status().isBadRequest());
-		mockMvc.perform(post("/api/pedidos-pecas").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"fornecedor\":\"X\",\"itens\":[{\"codigoPeca\":999,\"quantidade\":1}]}"))
-				.andExpect(status().isNotFound()).andExpect(jsonPath("$.message").value("Peça não encontrada: 999"));
-	}
+  @Test
+  void quantidadeInvalidaRetorna400SemChamarService() throws Exception {
+    mvc.perform(
+            post("/api/pedidos-pecas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fornecedor\":\"X\",\"itens\":[{\"codigoPeca\":1,\"quantidade\":0}]}"))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(service);
+  }
 }

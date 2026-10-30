@@ -1,16 +1,13 @@
 # MecâniQA API - Belo Horizonte
 
-API REST da oficina fictícia MecâniQA, desenvolvida em Java e Spring Boot para a OAT 2
-da disciplina de Desenvolvimento Web Orientado a Objetos.
+API REST da oficina fictícia MecâniQA, desenvolvida em Java e Spring Boot. A persistência
+das entidades é feita com JDBC puro e MySQL, sem ORM.
 
 ## Visão geral
 
-O projeto mantém o catálogo de peças e serviços e implementa ordens de serviço e pedidos
-de peças com persistência exclusivamente em memória. Cada tipo de recurso possui um
-repository manual baseado no padrão Singleton.
-
-Por requisito da atividade, o projeto não utiliza banco de dados, Spring Data ou injeção
-de dependência (`@Autowired`). Os dados são perdidos quando a aplicação é encerrada.
+O projeto mantém peças, serviços, ordens de serviço e pedidos de peças no MySQL. Os
+repositórios JDBC implementam o contrato genérico `Repositorio<T, ID>` e compartilham o
+ciclo de conexão da classe abstrata `RepositorioJdbcTemplate` (Template Method).
 
 ## Tecnologias
 
@@ -18,6 +15,7 @@ de dependência (`@Autowired`). Os dados são perdidos quando a aplicação é e
 - Spring Boot 4.1.0
 - Spring Web MVC
 - Jakarta Bean Validation
+- MySQL Connector/J e JDBC puro (sem JPA, Hibernate ou Spring Data)
 - Gradle 9.5.1 com Kotlin DSL
 - JUnit 5 e MockMvc
 
@@ -32,7 +30,9 @@ de dependência (`@Autowired`). Os dados são perdidos quando a aplicação é e
 - Validação de corpos de requisição.
 - Erros JSON padronizados.
 - Status HTTP semânticos.
-- Armazenamento em memória por repositories Singleton.
+- Persistência MySQL de peças, serviços, ordens de serviço, pedidos e seus relacionamentos.
+- Queries JDBC manuais e mappers de `ResultSet`; sem JPA, Hibernate ou Spring Data.
+- Erros de domínio tratados explicitamente nas camadas Service e Controller, sem advice global.
 - Criação de ordens de serviço pelo padrão Builder.
 - Alteração dos cinco status obrigatórios da OS.
 - Criação de pedidos e alteração dos quatro status obrigatórios.
@@ -60,7 +60,22 @@ cd mecaniQA-api-belo_horizonte
 
 O Gradle Wrapper já faz parte do projeto; não é necessário instalar Gradle globalmente.
 
-Não existem variáveis de ambiente obrigatórias nem credenciais para configurar.
+Execute `script_mecaniqa.sql` no MySQL para criar o banco e as tabelas. A conexão usa
+`DB_URL`, `DB_USER` e `DB_PASSWORD`; os valores padrão apontam para
+`localhost:3306/mecaniqa`, usuário `root` e senha vazia. Configure credenciais próprias
+no ambiente antes de executar a aplicação.
+
+Exemplo PowerShell:
+
+```powershell
+$env:DB_URL = "jdbc:mysql://localhost:3306/mecaniqa?useSSL=false&serverTimezone=America/Sao_Paulo"
+$env:DB_USER = "root"
+$env:DB_PASSWORD = "sua-senha"
+```
+
+A conexão é aberta sob demanda ao executar operação JDBC. Credenciais inválidas geram
+mensagem clara de conectividade sem retornar a senha. Os recursos JDBC são fechados com
+`try-with-resources`.
 
 ## Execução
 
@@ -301,48 +316,46 @@ Erros de recurso inexistente seguem o mesmo formato com status `404`.
 .\gradlew.bat test
 ```
 
-A suíte atual possui 30 testes automatizados, sem falhas. O relatório HTML é gerado em
-`build/reports/tests/test/index.html`.
+A suíte possui 19 testes automatizados de controllers, serviços e persistência JDBC, todos
+aprovados. O relatório HTML é gerado em `build/reports/tests/test/index.html`.
 
 Consulte a [matriz completa de cenários](docs/cenarios-de-teste.md).
 
 ## Collection Postman
 
-Importe [`postman/MecaniQA-OAT2.postman_collection.json`](postman/MecaniQA-OAT2.postman_collection.json)
+Importe [`postman/MecaniQA-OAT3.postman_collection.json`](postman/MecaniQA-OAT3.postman_collection.json)
 no Postman. Execute as requisições na ordem apresentada; os códigos criados são
 armazenados automaticamente nas variáveis da collection. A collection da OAT 1 foi
 preservada como histórico.
 
-## Diagrama de classes
+## Requisitos OAT 3
 
-O UML completo está em [docs/diagrama-classes.md](docs/diagrama-classes.md). O diagrama
-de atividade está em [docs/diagrama-atividade-criar-os.md](docs/diagrama-atividade-criar-os.md).
-Os dois diagramas exigidos para a entrega também estão reunidos em
-[apresentacoes/DIAGRAMAS.md](apresentacoes/DIAGRAMAS.md).
+O resumo dos requisitos de persistência, Template Method e versionamento está em
+[docs/oat3-requisitos.md](docs/oat3-requisitos.md).
 
 ## Estrutura do projeto
 
 ```text
 src/
 ├── main/
-│   ├── java/br/com/mecaniqa/api/
+    │   ├── java/br/com/mecaniqa/api/
+│   │   ├── config/       # Conexão MySQL
 │   │   ├── controller/   # Endpoints REST
-    │   │   ├── dto/          # DTOs de entrada e saída
-│   │   ├── exception/    # Respostas e tratamento de erros
-    │   │   ├── mapper/       # Conversões DTO ↔ domínio
-    │   │   ├── model/        # Peça, serviço, OS, pedido, item e enums
-    │   │   ├── repository/   # Armazenamento Singleton em memória
-    │   │   ├── service/      # Regras e orquestração das histórias da OAT 2
-│   │   └── ApiApplication.java
+│   │   ├── dto/          # DTOs de entrada e saída
+│   │   ├── exception/    # Exceções e erros da API
+│   │   ├── mapper/       # Conversões DTO ↔ domínio e ResultSet
+│   │   ├── model/        # Entidades e enums
+│   │   ├── repository/   # JDBC manual + Template Method
+│   │   └── service/      # Regras e orquestração
 │   └── resources/application.properties
 └── test/java/br/com/mecaniqa/api/
-    ├── controller/       # Testes HTTP com MockMvc
-    └── repository/       # Testes dos Singletons
+    ├── controller/       # Testes HTTP
+    └── repository/       # Testes de repositório e JDBC
 
-docs/                     # UML e matriz de testes
-postman/                  # Collection executável da API
+docs/                     # Cenários e requisitos OAT 3
+postman/                  # Coleção executável da API
+script_mecaniqa.sql       # DDL do banco MySQL
 ```
-
 ## Arquitetura
 
 ```text
@@ -356,12 +369,12 @@ Mapper DTO → domínio
     ↓
 Service
     ↓
-Repository Singleton
+Repository JDBC (peças)
     ↓
-Lista em memória
+MySQL via PreparedStatement
     ↓
 Mapper domínio → DTO de resposta
 ```
 
-Os controllers acessam os repositories exclusivamente por `getInstance()`, conforme a
-restrição arquitetural da atividade.
+Os controllers dependem dos serviços. Os serviços aplicam as regras de negócio e usam
+repositories JDBC, que implementam o contrato genérico `Repositorio<T, ID>`.

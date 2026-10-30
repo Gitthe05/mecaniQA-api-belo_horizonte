@@ -6,83 +6,82 @@ import java.util.Objects;
 
 public class Servico {
 
-	private Long codigo;
-	private String nome;
-	private Integer duracaoEstimadaMinutos;
-	private BigDecimal custoTabelado;
-	private LocalDateTime dataCriacao;
-	private LocalDateTime dataUltimaAtualizacao;
+  private Long codigo;
+  private String nome;
+  private Integer duracaoEstimadaMinutos;
+  private BigDecimal custoTabelado;
+  private LocalDateTime dataCriacao;
+  private LocalDateTime dataUltimaAtualizacao;
 
-	public Servico() {
-	}
+  public Servico() {}
 
-	public Servico(String nome, Integer duracaoEstimadaMinutos, BigDecimal custoTabelado) {
-		this.nome = nome;
-		this.duracaoEstimadaMinutos = duracaoEstimadaMinutos;
-		this.custoTabelado = custoTabelado;
-	}
+  public Servico(String nome, Integer duracaoEstimadaMinutos, BigDecimal custoTabelado) {
+    this.nome = nome;
+    this.duracaoEstimadaMinutos = duracaoEstimadaMinutos;
+    this.custoTabelado = custoTabelado;
+  }
 
-	public Long getCodigo() {
-		return codigo;
-	}
+  public Long getCodigo() {
+    return codigo;
+  }
 
-	public void setCodigo(Long codigo) {
-		this.codigo = codigo;
-	}
+  public void setCodigo(Long codigo) {
+    this.codigo = codigo;
+  }
 
-	public String getNome() {
-		return nome;
-	}
+  public String getNome() {
+    return nome;
+  }
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
+  public void setNome(String nome) {
+    this.nome = nome;
+  }
 
-	public Integer getDuracaoEstimadaMinutos() {
-		return duracaoEstimadaMinutos;
-	}
+  public Integer getDuracaoEstimadaMinutos() {
+    return duracaoEstimadaMinutos;
+  }
 
-	public void setDuracaoEstimadaMinutos(Integer duracaoEstimadaMinutos) {
-		this.duracaoEstimadaMinutos = duracaoEstimadaMinutos;
-	}
+  public void setDuracaoEstimadaMinutos(Integer duracaoEstimadaMinutos) {
+    this.duracaoEstimadaMinutos = duracaoEstimadaMinutos;
+  }
 
-	public BigDecimal getCustoTabelado() {
-		return custoTabelado;
-	}
+  public BigDecimal getCustoTabelado() {
+    return custoTabelado;
+  }
 
-	public void setCustoTabelado(BigDecimal custoTabelado) {
-		this.custoTabelado = custoTabelado;
-	}
+  public void setCustoTabelado(BigDecimal custoTabelado) {
+    this.custoTabelado = custoTabelado;
+  }
 
-	public LocalDateTime getDataCriacao() {
-		return dataCriacao;
-	}
+  public LocalDateTime getDataCriacao() {
+    return dataCriacao;
+  }
 
-	public void setDataCriacao(LocalDateTime dataCriacao) {
-		this.dataCriacao = dataCriacao;
-	}
+  public void setDataCriacao(LocalDateTime dataCriacao) {
+    this.dataCriacao = dataCriacao;
+  }
 
-	public LocalDateTime getDataUltimaAtualizacao() {
-		return dataUltimaAtualizacao;
-	}
+  public LocalDateTime getDataUltimaAtualizacao() {
+    return dataUltimaAtualizacao;
+  }
 
-	public void setDataUltimaAtualizacao(LocalDateTime dataUltimaAtualizacao) {
-		this.dataUltimaAtualizacao = dataUltimaAtualizacao;
-	}
+  public void setDataUltimaAtualizacao(LocalDateTime dataUltimaAtualizacao) {
+    this.dataUltimaAtualizacao = dataUltimaAtualizacao;
+  }
 
-	@Override
-	public boolean equals(Object objeto) {
-		if (this == objeto) {
-			return true;
-		}
-		if (!(objeto instanceof Servico outro)) {
-			return false;
-		}
-		return codigo != null && Objects.equals(codigo, outro.codigo);
-	}
+  @Override
+  public boolean equals(Object objeto) {
+    if (this == objeto) {
+      return true;
+    }
+    if (!(objeto instanceof Servico outro)) {
+      return false;
+    }
+    return codigo != null && Objects.equals(codigo, outro.codigo);
+  }
 
-	@Override
-	public int hashCode() {
-		return codigo == null ? 0 : Objects.hash(codigo);
-	}
+  @Override
+  public int hashCode() {
+    return codigo == null ? 0 : Objects.hash(codigo);
+  }
 }
