@@ -23,7 +23,7 @@ ciclo de conexão da classe abstrata `RepositorioJdbcTemplate` (Template Method)
 
 - Cadastro, listagem, consulta, atualização e exclusão de peças.
 - Cadastro, listagem, consulta, atualização e exclusão de serviços.
-- Códigos únicos sequenciais gerados pela aplicação.
+- Códigos gerados pelo `AUTO_INCREMENT` do MySQL.
 - Datas de criação e atualização geradas automaticamente.
 - Categoria obrigatória para peças.
 - Tamanho e cor opcionais.
@@ -64,6 +64,12 @@ Execute `script_mecaniqa.sql` no MySQL para criar o banco e as tabelas. A conex�
 `DB_URL`, `DB_USER` e `DB_PASSWORD`; os valores padrão apontam para
 `localhost:3306/mecaniqa`, usuário `root` e senha vazia. Configure credenciais próprias
 no ambiente antes de executar a aplicação.
+
+No PowerShell, o script pode ser aplicado com:
+
+```powershell
+Get-Content .\script_mecaniqa.sql | mysql -u root -p
+```
 
 Exemplo PowerShell:
 
@@ -250,6 +256,7 @@ Resposta `200 OK`: serviço atualizado, preservando código, nome e data de cria
 | `GET` | `/api/ordens-servico` | Lista as ordens |
 | `GET` | `/api/ordens-servico/{codigo}` | Consulta uma ordem |
 | `PATCH` | `/api/ordens-servico/{codigo}/status` | Modifica o status |
+| `DELETE` | `/api/ordens-servico/{codigo}` | Exclui uma ordem |
 
 ```json
 {
@@ -263,6 +270,9 @@ Resposta `200 OK`: serviço atualizado, preservando código, nome e data de cria
 
 Status: `ABERTO`, `PENDENTE_DE_PAGAMENTO`, `PAGO`, `EM_EXECUCAO` e `EXECUTADO`.
 
+O `POST` responde com `201 Created` e `Location`; consultas e alteração de status respondem
+com `200 OK`; exclusão responde com `204 No Content`. Recurso inexistente retorna `404`.
+
 ### Pedidos de peças
 
 | Método | URL | Descrição |
@@ -272,6 +282,7 @@ Status: `ABERTO`, `PENDENTE_DE_PAGAMENTO`, `PAGO`, `EM_EXECUCAO` e `EXECUTADO`.
 | `GET` | `/api/pedidos-pecas/{codigo}` | Consulta um pedido |
 | `POST` | `/api/pedidos-pecas/{codigo}/itens` | Adiciona uma peça e sua quantidade |
 | `PATCH` | `/api/pedidos-pecas/{codigo}/status` | Modifica o status |
+| `DELETE` | `/api/pedidos-pecas/{codigo}` | Exclui um pedido |
 
 ```json
 {
@@ -282,6 +293,10 @@ Status: `ABERTO`, `PENDENTE_DE_PAGAMENTO`, `PAGO`, `EM_EXECUCAO` e `EXECUTADO`.
 
 Status: `ORCANDO`, `PENDENTE_DE_PAGAMENTO`, `PAGO_FATURADO` e `ENTREGUE`. Se uma peça
 já existente for adicionada novamente, a quantidade é somada ao item associativo.
+
+O `POST` de criação responde com `201 Created` e `Location`; consultas, alteração de status
+e inclusão de item respondem com `200 OK`; exclusão responde com `204 No Content`. Recurso
+inexistente retorna `404`.
 
 ## Validações
 
@@ -333,12 +348,15 @@ preservada como histórico.
 O resumo dos requisitos de persistência, Template Method e versionamento está em
 [docs/oat3-requisitos.md](docs/oat3-requisitos.md).
 
+A branch de avaliação é `main`. A apresentação da OAT 3 deve ser versionada em
+`apresentacoes/mecaniQA_api_oat3_belo_horizonte.pdf` e também entregue no Blackboard.
+
 ## Estrutura do projeto
 
 ```text
 src/
 ├── main/
-    │   ├── java/br/com/mecaniqa/api/
+│   ├── java/br/com/mecaniqa/api/
 │   │   ├── config/       # Conexão MySQL
 │   │   ├── controller/   # Endpoints REST
 │   │   ├── dto/          # DTOs de entrada e saída
@@ -350,7 +368,8 @@ src/
 │   └── resources/application.properties
 └── test/java/br/com/mecaniqa/api/
     ├── controller/       # Testes HTTP
-    └── repository/       # Testes de repositório e JDBC
+    ├── repository/       # Testes de contrato e ciclo de vida JDBC
+    └── service/          # Testes de regras de negócio
 
 docs/                     # Cenários e requisitos OAT 3
 postman/                  # Coleção executável da API
@@ -363,17 +382,15 @@ Cliente HTTP
     ↓
 Controller REST
     ↓
-Validação do DTO
-    ↓
-Mapper DTO → domínio
-    ↓
 Service
     ↓
-Repository JDBC (peças)
+Mapper de entrada → domínio
+    ↓
+Repository JDBC
     ↓
 MySQL via PreparedStatement
     ↓
-Mapper domínio → DTO de resposta
+Mapper ResultSet → domínio → DTO de resposta
 ```
 
 Os controllers dependem dos serviços. Os serviços aplicam as regras de negócio e usam
